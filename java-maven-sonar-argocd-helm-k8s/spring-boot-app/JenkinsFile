@@ -46,10 +46,15 @@ pipeline {
                 sh '''
                     git config user.email "singhshyam792@gmail.com"
                     git config user.name "singhshyam792"
-                    BUILD_NUMBER=${BUILD_NUMBER}
-                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git status 
-                    cat java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml 
+                    def buildTag = "${BUILD_NUMBER}"
+                    def imageName = "shyamsinghdocker/ultimate-cicd:${buildTag}"
+                    def manifestPath = "java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml"
+
+            
+                    
+                    sed -i "s|image: shyamsinghdocker/ultimate-cicd:.*|image: ${imageName}|" ${manifestPath}
+                     
+                     
                     git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main

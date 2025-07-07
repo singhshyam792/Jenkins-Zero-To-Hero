@@ -37,30 +37,35 @@ pipeline {
       }
     }
     stage('Update Deployment File') {
-        environment {
-            GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
-            GIT_USER_NAME = "singhshyam792"
-        }
-        steps {
-            withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+    environment {
+        GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
+        GIT_USER_NAME = "singhshyam792"
+    }
+    steps {
+        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+            script {
+                def buildTag = "${BUILD_NUMBER}"
+                def imageName = "shyamsinghdocker/ultimate-cicd:${buildTag}"
+                def manifestPath = "java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml"
+
+                // Git config
                 sh '''
                     git config user.email "singhshyam792@gmail.com"
                     git config user.name "singhshyam792"
-                    def buildTag = "${BUILD_NUMBER}"
-                    def imageName = "shyamsinghdocker/ultimate-cicd:${buildTag}"
-                    def manifestPath = "java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml"
-
-            
-                    
-                    sed -i "s|image: shyamsinghdocker/ultimate-cicd:.*|image: ${imageName}|" ${manifestPath}
-                     
-                     
-                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                 '''
+
+                // Replace image line dynamically
+                sh "sed -i 's|image: shyamsinghdocker/ultimate-cicd:.*|image: ${imageName}|' ${manifestPath}"
+
+                // Commit and push
+                sh """
+                    git add ${manifestPath}
+                    git commit -m "Update deployment image to version ${buildTag}"
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                """
             }
         }
     }
-  }
+}
+
 }
